@@ -1,10 +1,16 @@
 """
 Retrieval Pipeline (Embedding + Vector Search)
 ================================================
-Embeds the chunks produced by ingestion using a free local model
-(sentence-transformers, no API key needed), stores them in a LOCAL
+Embeds the chunks produced by ingestion and stores them in a LOCAL
 Qdrant instance (embedded mode -- no server, no account, no signup),
 and provides a search function to query them.
+
+Uses fastembed (Qdrant's own lightweight embedding library, built on
+ONNX Runtime) rather than sentence-transformers/PyTorch. PyTorch pulled
+in full GPU/CUDA packages Render doesn't even have hardware for, and
+the combined memory footprint got the deployed process killed (OOM,
+exit code 137) on Render's 512MB free tier. fastembed has no PyTorch
+dependency at all and uses a fraction of the memory.
 
 Usage:
     # Build the index from a chunks file produced by ingestion:
@@ -20,20 +26,30 @@ from pathlib import Path
 
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct
-from sentence_transformers import SentenceTransformer
+from fastembed import TextEmbedding
 
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
-EMBEDDING_MODEL = "all-MiniLM-L6-v2"  # small, fast, free, runs on CPU fine
-EMBEDDING_DIM = 384                   # this model's output vector size
+EMBEDDING_MODEL = "BAAI/bge-small-en-v1.5"  # 384-dim, same size as the old model, no PyTorch needed
+EMBEDDING_DIM = 384
 QDRANT_PATH = "data/qdrant_db"        # local on-disk store, no server needed
 COLLECTION_NAME = "sec_filings"
+
 
 _client_instance = None
 _model_instance = None
 
+
 def get_client() -> QdrantClient:
+    """Connect to (or create) the local embedded Qdrant database.
+
+    Returns a SHARED singleton instance rather than a new client each
+    call. Qdrant's embedded/local mode uses a file lock on the storage
+    folder, so two live client instances pointing at the same path in
+    the same process will collide -- this happened when a function
+    opened its own client while also calling code that opened another.
+    """
     global _client_instance
     if _client_instance is None:
         Path(QDRANT_PATH).mkdir(parents=True, exist_ok=True)
@@ -41,12 +57,23 @@ def get_client() -> QdrantClient:
     return _client_instance
 
 
-def get_model() -> SentenceTransformer:
+def get_model() -> TextEmbedding:
+    """Load the embedding model (singleton -- only loads/downloads once per process)."""
     global _model_instance
     if _model_instance is None:
-        print("Loading embedding model (first run downloads ~90MB)...")
-        _model_instance = SentenceTransformer(EMBEDDING_MODEL)
+        print("Loading embedding model (first run downloads ~130MB, no PyTorch needed)...")
+        _model_instance = TextEmbedding(model_name=EMBEDDING_MODEL)
     return _model_instance
+
+
+def embed_one(model: TextEmbedding, text: str) -> list[float]:
+    """Embed a single string, returning a plain list of floats."""
+    return list(model.embed([text]))[0].tolist()
+
+
+def embed_many(model: TextEmbedding, texts: list[str]) -> list[list[float]]:
+    """Embed a list of strings, returning a list of lists of floats."""
+    return [v.tolist() for v in model.embed(texts)]
 
 
 def ensure_collection(client: QdrantClient):
@@ -71,9 +98,16 @@ def build_index(input_path: str):
     client = get_client()
     ensure_collection(client)
 
-    print("Embedding chunks (this may take a minute on CPU)...")
+    print("Embedding chunks in batches (watch for where this stops, if it does)...")
     texts = [c["text"] for c in chunks]
-    embeddings = model.encode(texts, show_progress_bar=True, batch_size=32)
+
+    embeddings = []
+    batch_size = 50
+    for i in range(0, len(texts), batch_size):
+        batch = texts[i:i + batch_size]
+        batch_embeddings = embed_many(model, batch)
+        embeddings.extend(batch_embeddings)
+        print(f"  ...embedded {len(embeddings)}/{len(texts)}", flush=True)
 
     points = []
     # Use a running counter as the point ID, offset so re-running on a
@@ -82,7 +116,7 @@ def build_index(input_path: str):
     for i, (chunk, vector) in enumerate(zip(chunks, embeddings)):
         points.append(PointStruct(
             id=existing_count + i,
-            vector=vector.tolist(),
+            vector=vector,
             payload={
                 "text": chunk["text"],
                 "ticker": chunk["ticker"],
@@ -108,7 +142,7 @@ def retrieve_chunks(query: str, top_k: int = 5, model=None, client=None) -> list
     if client is None:
         client = get_client()
 
-    query_vector = model.encode(query).tolist()
+    query_vector = embed_one(model, query)
     response = client.query_points(
         collection_name=COLLECTION_NAME,
         query=query_vector,
@@ -154,3 +188,4 @@ if __name__ == "__main__":
         search(args.query, args.top_k)
     if not args.input and not args.query:
         parser.error("Provide --input to build the index, --query to search, or both")
+

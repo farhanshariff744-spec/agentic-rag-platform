@@ -14,13 +14,24 @@ Usage (as a library -- see inference/answer.py for integration):
 """
 
 import uuid
+import sys
 from pathlib import Path
 
 import numpy as np
 from qdrant_client.models import Distance, VectorParams, PointStruct
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from retrieval.build_index import embed_one
+
+# ---------------------------------------------------------------------------
+# Config
+# ---------------------------------------------------------------------------
 CACHE_COLLECTION = "answer_cache"
-EMBEDDING_DIM = 384  
+EMBEDDING_DIM = 384  # must match the embedding model used in retrieval
+# Cosine similarity threshold above which a past question counts as "the
+# same question" for caching purposes. 1.0 = identical. This is a judgment
+# call -- too low returns stale/wrong answers for different questions, too
+# high means the cache almost never hits. 0.95 is a reasonably strict start.
 SIMILARITY_THRESHOLD = 0.95
 
 
@@ -38,12 +49,12 @@ def check_cache(question: str, model, client, threshold: float = SIMILARITY_THRE
     """Return a cached result if a sufficiently similar question exists, else None."""
     ensure_cache_collection(client)
 
-    query_vector = model.encode(question)  
+    query_vector = np.array(embed_one(model, question))  # keep as numpy array for the manual check below
     response = client.query_points(
         collection_name=CACHE_COLLECTION,
         query=query_vector.tolist(),
         limit=1,
-        with_vectors=True,  
+        with_vectors=True,  # need the raw vector back to verify the score ourselves
     )
 
     if not response.points:
@@ -51,6 +62,11 @@ def check_cache(question: str, model, client, threshold: float = SIMILARITY_THRE
 
     best = response.points[0]
 
+    # Qdrant's own returned score has proven unreliable for this collection --
+    # it gets reopened across many separate short-lived CLI processes, and its
+    # local/embedded mode has known rough edges with that access pattern on
+    # small collections. Recompute real cosine similarity directly instead of
+    # trusting the score field, the same way debug_cache.py verified it.
     cached_vector = np.array(best.vector)
     similarity = float(
         np.dot(query_vector, cached_vector)
@@ -58,7 +74,7 @@ def check_cache(question: str, model, client, threshold: float = SIMILARITY_THRE
     )
 
     if similarity < threshold:
-        return None  
+        return None  # closest match isn't close enough to count as a hit
 
     return {
         "answer": best.payload["answer"],
@@ -72,7 +88,7 @@ def store_in_cache(question: str, answer: str, sources: list[dict], model, clien
     """Store a question/answer pair in the cache for future lookups."""
     ensure_cache_collection(client)
 
-    query_vector = model.encode(question).tolist()
+    query_vector = embed_one(model, question)
     point = PointStruct(
         id=str(uuid.uuid4()),
         vector=query_vector,

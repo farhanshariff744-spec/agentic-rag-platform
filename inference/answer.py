@@ -25,7 +25,7 @@ import requests
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from retrieval.build_index import get_model, get_client, retrieve_chunks
 from cache.semantic_cache import check_cache, store_in_cache
-from prompts.prompts import ANSWER_PROMPT, PROMPT_VERSION
+from prompts.prompt_templates import ANSWER_PROMPT, PROMPT_VERSION
 
 # ---------------------------------------------------------------------------
 # Config
@@ -69,9 +69,9 @@ def answer_question(question: str, top_k: int = 5) -> dict:
         "model": MODEL,
         "messages": [{"role": "user", "content": prompt}],
         "temperature": 0.2,
-        "max_tokens": 1200,  # gpt-oss-20b spends some budget on internal reasoning
-                             # before writing the final answer; 500 was too tight
-                             # and left the actual response empty.
+        "max_tokens": 2000,  # gpt-oss-20b spends some budget on internal reasoning
+                             # before writing the final answer; too tight a limit
+                             # risks truncating mid-answer on longer responses.
     }
     headers = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
     resp = requests.post(API_URL, headers=headers, json=payload, timeout=30)

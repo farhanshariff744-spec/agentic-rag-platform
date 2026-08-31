@@ -7,6 +7,9 @@ up SEC filings at all before answering. Simple conversational input
 retrieval; substantive questions go through the same cache -> retrieve
 -> generate pipeline built in inference/answer.py.
 
+This is what turns the platform from "one function that always searches"
+into something that actually reasons about what to do first.
+
 Usage:
     python agent/agent.py "What are Apple's main business risks?"
     python agent/agent.py "hello, what can you do?"
@@ -16,6 +19,7 @@ import argparse
 import json
 import os
 import sys
+import time
 from pathlib import Path
 from typing import TypedDict
 
@@ -27,6 +31,9 @@ from retrieval.build_index import get_model, get_client, retrieve_chunks
 from cache.semantic_cache import check_cache, store_in_cache
 from prompts.prompt_templates import ROUTER_PROMPT, ANSWER_PROMPT, DIRECT_PROMPT, PROMPT_VERSION
 
+# ---------------------------------------------------------------------------
+# Config
+# ---------------------------------------------------------------------------
 API_KEY = os.environ.get("GROQ_API_KEY", "")
 API_URL = "https://api.groq.com/openai/v1/chat/completions"
 MODEL = "openai/gpt-oss-20b"
@@ -40,8 +47,13 @@ class AgentState(TypedDict):
     from_cache: bool
 
 
-def call_groq(prompt: str, max_tokens: int = 500) -> str:
-    """Shared helper for calling Groq -- same pattern used in guardrails/inference."""
+def call_groq(prompt: str, max_tokens: int = 500, retries: int = 3) -> str:
+    """Shared helper for calling Groq -- same pattern used in guardrails/inference.
+
+    Retries with backoff on 429 (rate limit) rather than crashing outright --
+    Groq's free tier has a requests-per-minute cap that's easy to hit during
+    heavy testing.
+    """
     payload = {
         "model": MODEL,
         "messages": [{"role": "user", "content": prompt}],
@@ -49,11 +61,23 @@ def call_groq(prompt: str, max_tokens: int = 500) -> str:
         "max_tokens": max_tokens,
     }
     headers = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
-    resp = requests.post(API_URL, headers=headers, json=payload, timeout=30)
-    resp.raise_for_status()
-    return resp.json()["choices"][0]["message"].get("content") or ""
+
+    for attempt in range(retries):
+        resp = requests.post(API_URL, headers=headers, json=payload, timeout=30)
+        if resp.status_code == 429:
+            wait = 8 * (attempt + 1)
+            print(f"Rate limited by Groq, waiting {wait}s before retry ({attempt + 1}/{retries})...")
+            time.sleep(wait)
+            continue
+        resp.raise_for_status()
+        return resp.json()["choices"][0]["message"].get("content") or ""
+
+    raise RuntimeError("Groq rate limit exceeded after repeated retries")
 
 
+# ---------------------------------------------------------------------------
+# Graph nodes
+# ---------------------------------------------------------------------------
 
 def route_node(state: AgentState) -> AgentState:
     response = call_groq(ROUTER_PROMPT + state["question"], max_tokens=150)
@@ -91,7 +115,7 @@ def retrieval_answer_node(state: AgentState) -> AgentState:
     context = "\n\n---\n\n".join(
         f"[{c['ticker']} {c['form']} filed {c['filing_date']}]\n{c['text']}" for c in chunks
     )
-    answer = call_groq(ANSWER_PROMPT.format(context=context, question=question), max_tokens=1200)
+    answer = call_groq(ANSWER_PROMPT.format(context=context, question=question), max_tokens=2000)
     sources = [{"ticker": c["ticker"], "form": c["form"],
                 "filing_date": c["filing_date"], "score": c["score"]} for c in chunks]
 
@@ -102,6 +126,10 @@ def retrieval_answer_node(state: AgentState) -> AgentState:
 def route_decision(state: AgentState) -> str:
     return "retrieve" if state["needs_retrieval"] else "direct"
 
+
+# ---------------------------------------------------------------------------
+# Build the graph
+# ---------------------------------------------------------------------------
 
 def build_agent():
     graph = StateGraph(AgentState)

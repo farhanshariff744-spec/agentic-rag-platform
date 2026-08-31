@@ -12,7 +12,7 @@ used for each test run, so a behavior change can always be traced back
 to which prompt version caused it.
 """
 
-PROMPT_VERSION = "v1"
+PROMPT_VERSION = "v2"
 
 ROUTER_PROMPT = """You are a router for a financial research assistant that answers \
 questions using SEC filings. Decide whether the MESSAGE below requires looking up \
@@ -30,7 +30,11 @@ using ONLY the context provided, which is excerpted from SEC filings. If the con
 does not contain enough information to answer, say so plainly rather than guessing \
 or using outside knowledge.
 
-Mention which filing (ticker, form type, filing date) each fact comes from.
+Keep the answer focused and complete rather than exhaustive: cover at most the 4-5 \
+most important points in full, rather than listing every possible point and risking \
+running out of room. A shorter, fully-finished answer is better than a longer one \
+that gets cut off. Mention which filing (ticker, form type, filing date) each fact \
+comes from.
 
 CONTEXT:
 {context}
