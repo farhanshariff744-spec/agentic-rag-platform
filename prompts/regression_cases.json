@@ -1,0 +1,22 @@
+[
+  {
+    "id": "risks_basic",
+    "question": "What are Apple's main business risks?",
+    "must_contain_any": ["competit", "risk", "supply"]
+  },
+  {
+    "id": "rnd_spend",
+    "question": "How much did Apple spend on R&D?",
+    "must_contain_any": ["31,370", "31.37", "research and development"]
+  },
+  {
+    "id": "revenue_growth",
+    "question": "What was Apple's revenue growth like?",
+    "must_contain_any": ["391,035", "2%", "2 %", "net sales"]
+  },
+  {
+    "id": "greeting_no_retrieval",
+    "question": "hello, what can you help with?",
+    "must_contain_any": ["SEC", "filing", "10-K", "10-Q"]
+  }
+]

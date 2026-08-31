@@ -1,0 +1,29 @@
+[
+  {
+    "question": "What are Apple's main business risks?",
+    "answer": "**Apple\u2019s main business risks (as disclosed in the SEC filings provided)**  \n\n| Risk | Source (Ticker, Form type, Filing date) |\n|------|----------------------------------------|\n| **Competitive pressure and limited market share** \u2013 Apple has a minority share in the global smartphone, personal computer, tablet and wearables markets, and some of those markets have experienced little or no growth or have contracted.  | AAPL\u202f10\u2011K, 2025\u201110\u201131 |\n| **Product\u2011launch and transition risk** \u2013 The company must successfully manage frequent introductions and transitions of products and services to remain competitive and stimulate customer demand.  | AAPL\u202f10\u2011K, 2025\u201110\u201131 |\n| **Supply\u2011chain and logistics risk** \u2013 Disruptions to suppliers, contract manufacturers, logistics providers, distributors, cellular network carriers and other channel partners can materially adversely affect the business.  | AAPL\u202f10\u2011K, 2025\u201110\u201131 |\n| **Credit, liquidity and financial\u2011instrument risk** \u2013 Potential financial instability, inability to obtain credit, failure of derivative counterparties, limitations on issuing new debt, reduced liquidity, and declines in fair values of financial instruments.  | AAPL\u202f10\u2011K, 2025\u201110\u201131 |\n| **Political, trade and geopolitical risk** \u2013 Political events, trade and other international disputes, geopolitical tensions, conflict, terrorism, natural disasters, public\u2011health issues, industrial accidents and other business interruptions can materially adversely affect the company.  | AAPL\u202f10\u2011K, 2024\u201111\u201101 (and reiterated in 2025\u201110\u201131) |\n| **Public\u2011health and pandemic risk** \u2013 Major public\u2011health issues, including pandemics such as COVID\u201119, can adversely affect the global economy, demand for consumer products, and the company\u2019s operations, supply chain, and sales channels.  | AAPL\u202f10\u2011K, 2025\u201110\u201131 |\n\nThese are the primary business\u2011risk themes that Apple has identified in the excerpts from its 2024 and 2025 Form\u202f10\u2011K filings.",
+    "faithfulness_score": null,
+    "unsupported_claims": [],
+    "relevancy_score": 0.95,
+    "context_precision": 1.0,
+    "used_retrieval": true
+  },
+  {
+    "question": "How much did Apple spend on R&D?",
+    "answer": "Apple\u2019s 2024 Form\u202f10\u2011K (filed\u202f2024\u201111\u201101) reports the following research\u2011and\u2011development (R&D) expenses:\n\n| Fiscal year | R&D expense (in millions) |\n|-------------|---------------------------|\n| 2024 | **$31,370\u202fmillion** |\n| 2023 | $29,915\u202fmillion |\n| 2022 | $26,251\u202fmillion |\n\nThus, for the most recent year reported, Apple spent **$31.37\u202fbillion** on R&D.",
+    "faithfulness_score": 1.0,
+    "unsupported_claims": [],
+    "relevancy_score": 0.95,
+    "context_precision": 0.2,
+    "used_retrieval": true
+  },
+  {
+    "question": "What was Apple's revenue growth like?",
+    "answer": "Apple\u2019s total net sales (i.e., revenue) changed modestly over the three\u2011year period reported in the 2024 10\u2011K:\n\n| Year | Total Net Sales (USD millions) | YoY Change |\n|------|--------------------------------|------------|\n| 2024 | 391,035 | **+2\u202f%** vs 2023 |\n| 2023 | 383,285 | **\u20113\u202f%** vs 2022 |\n| 2022 | 394,328 | \u2014 |\n\n**Segment\u2011level detail (2024 vs 2023)** \u2013 all figures are in USD millions:\n\n| Segment | 2024 | 2023 | YoY Change |\n|---------|------|------|------------|\n| Americas | 167,045 | 162,560 | +3\u202f% |\n| Europe | 101,328 | 94,294 | +7\u202f% |\n| Greater China | 66,952 | 72,559 | \u20118\u202f% |\n| Japan | 25,052 | 24,257 | +3\u202f% |\n| Rest of Asia Pacific | 30,658 | 29,615 | +4\u202f% |\n\n**Key take\u2011away:**  \n- Apple\u2019s overall revenue grew slightly in 2024, up 2\u202f% from 2023, largely driven by higher services sales in the Americas and Europe.  \n- The prior year (2023) saw a 3\u202f% decline from 2022, mainly due to weaker iPhone and iPad sales in Greater China.  \n\nThese figures come from Apple Inc.\u2019s **2024 Form\u202f10\u2011K filed on 2024\u201111\u201101** (sections detailing net sales by segment and total net sales).",
+    "faithfulness_score": null,
+    "unsupported_claims": [],
+    "relevancy_score": 0.95,
+    "context_precision": 0.2,
+    "used_retrieval": true
+  }
+]
