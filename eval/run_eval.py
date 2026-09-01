@@ -30,7 +30,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from agent.agent import build_agent
 from retrieval.build_index import get_model, get_client, retrieve_chunks
 
-API_KEY = os.environ.get("GROQ_API_KEY", "")
+API_KEY = os.environ.get("GROQ_API_KEY", "").strip()
 API_URL = "https://api.groq.com/openai/v1/chat/completions"
 MODEL = "openai/gpt-oss-20b"
 

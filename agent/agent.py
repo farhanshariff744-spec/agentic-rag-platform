@@ -34,7 +34,7 @@ from prompts.prompt_templates import ROUTER_PROMPT, ANSWER_PROMPT, DIRECT_PROMPT
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
-API_KEY = os.environ.get("GROQ_API_KEY", "")
+API_KEY = os.environ.get("GROQ_API_KEY", "").strip()
 API_URL = "https://api.groq.com/openai/v1/chat/completions"
 MODEL = "openai/gpt-oss-20b"
 

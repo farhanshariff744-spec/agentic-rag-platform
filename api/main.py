@@ -35,7 +35,7 @@ _agent = None
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global _agent
-    if not os.environ.get("GROQ_API_KEY"):
+        if not os.environ.get("GROQ_API_KEY", "").strip():
         raise RuntimeError(
             "GROQ_API_KEY not set. Export it before starting the server: "
             "export $(cat .env | xargs)"

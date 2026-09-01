@@ -29,7 +29,7 @@ import requests
 # ---------------------------------------------------------------------------
 # Config — free-tier LLM provider for Stage 2
 # ---------------------------------------------------------------------------
-API_KEY = os.environ.get("GROQ_API_KEY", "")
+API_KEY = os.environ.get("GROQ_API_KEY", "").strip()
 API_URL = "https://api.groq.com/openai/v1/chat/completions"
 MODEL = "openai/gpt-oss-20b"  # current Groq free-tier model (llama-3.1-8b-instant was decommissioned Aug 2026)
 
